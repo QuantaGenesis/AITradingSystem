@@ -1,0 +1,72 @@
+# =============================================================================
+# docker-compose.yml — Base / Production configuration
+#
+# Dùng trực tiếp để deploy:
+#   docker compose up -d
+#
+# Khi develop local, Docker Compose tự động merge với
+# docker-compose.override.yml (hot-reload, ports dev, v.v.)
+# =============================================================================
+
+services:
+  database:
+    image: pgvector/pgvector:pg17-trixie
+    container_name: tradingos-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: tradingos
+    volumes:
+      - postgres_data_ai:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d tradingos"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  backend:
+    build:
+      context: ../AITradingSystem-backend
+      dockerfile: Dockerfile
+    image: tradingos-backend:latest
+    container_name: tradingos-backend
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgresql+psycopg://postgres:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@database:5432/tradingos
+      - AUTH_SECRET=${AUTH_SECRET:?AUTH_SECRET is required}
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:?ADMIN_PASSWORD is required}
+      - CORS_ORIGINS=${CORS_ORIGINS:-*}
+      - ORDER_SYNC_INTERVAL_S=${ORDER_SYNC_INTERVAL_S:-60}
+      - EXPERIENCE_EXTRACTION_ENABLED=${EXPERIENCE_EXTRACTION_ENABLED:-true}
+      - EXPERIENCE_EXTRACTION_INTERVAL_S=${EXPERIENCE_EXTRACTION_INTERVAL_S:-300}
+      - EXPERIENCE_LLM_MODEL=${EXPERIENCE_LLM_MODEL:-}
+    ports:
+      - "127.0.0.1:8888:8000"
+    depends_on:
+      database:
+        condition: service_healthy
+    volumes:
+      - backend_data:/app/data
+
+  frontend:
+    build:
+      context: ../AITradingSystem-frontend
+      dockerfile: Dockerfile
+      args:
+        # Để trống = frontend gọi API qua nginx proxy (/api → backend:8000)
+        # Set nếu dùng subdomain riêng: VITE_API_BASE_URL=https://api.example.com
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL:-}
+    image: tradingos-frontend:latest
+    container_name: tradingos-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-3333}:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data_ai:
+  backend_data:

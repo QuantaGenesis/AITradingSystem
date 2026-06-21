@@ -1,0 +1,180 @@
+/**
+ * AITradingSystem custom theme
+ * Dark-first design with green trading terminal accent colors.
+ */
+
+/* ── CSS Variables ─────────────────────────────────────────────────────── */
+
+:root {
+  --ifm-color-primary: #10b981;
+  --ifm-color-primary-dark: #059669;
+  --ifm-color-primary-darker: #047857;
+  --ifm-color-primary-darkest: #065f46;
+  --ifm-color-primary-light: #34d399;
+  --ifm-color-primary-lighter: #6ee7b7;
+  --ifm-color-primary-lightest: #a7f3d0;
+
+  --ifm-code-font-size: 90%;
+  --ifm-font-family-base: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --ifm-font-family-monospace: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+
+  --docusaurus-highlighted-code-line-bg: rgba(16, 185, 129, 0.1);
+}
+
+/* ── Dark mode overrides ───────────────────────────────────────────────── */
+[data-theme='dark'] {
+  --ifm-background-color: #0a0a0a;
+  --ifm-background-surface-color: #111111;
+  --ifm-navbar-background-color: #0a0a0a;
+  --ifm-footer-background-color: #050505;
+  --ifm-toc-border-color: #1f2937;
+  --ifm-color-emphasis-300: #374151;
+  --ifm-code-background: #111827;
+
+  --docusaurus-highlighted-code-line-bg: rgba(16, 185, 129, 0.08);
+}
+
+/* ── Google Fonts ──────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ── Navbar ────────────────────────────────────────────────────────────── */
+.navbar {
+  border-bottom: 1px solid rgba(16, 185, 129, 0.12);
+  backdrop-filter: blur(12px);
+}
+
+[data-theme='dark'] .navbar {
+  background: rgba(10, 10, 10, 0.9);
+}
+
+.navbar__brand {
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: -0.02em;
+}
+
+/* ── Hero / landing page ───────────────────────────────────────────────── */
+.hero {
+  background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(16, 185, 129, 0.15) 0%, transparent 60%);
+  padding: 5rem 0 4rem;
+}
+
+[data-theme='dark'] .hero {
+  background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(16, 185, 129, 0.08) 0%, transparent 60%),
+              linear-gradient(to bottom, #050505, #0a0a0a);
+}
+
+.hero__title {
+  font-size: 3.5rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  background: linear-gradient(135deg, #10b981 0%, #6ee7b7 50%, #34d399 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero__subtitle {
+  font-size: 1.25rem;
+  font-weight: 400;
+  color: #9ca3af;
+  max-width: 560px;
+  margin: 1rem auto 0;
+  line-height: 1.6;
+}
+
+/* ── Feature cards on homepage ─────────────────────────────────────────── */
+.feature-card {
+  background: #111111;
+  border: 1px solid #1f2937;
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.feature-card:hover {
+  border-color: rgba(16, 185, 129, 0.4);
+  transform: translateY(-2px);
+}
+
+/* ── Sidebar ───────────────────────────────────────────────────────────── */
+[data-theme='dark'] .menu__list-item-collapsible:hover,
+[data-theme='dark'] .menu__link:hover {
+  background: rgba(16, 185, 129, 0.06);
+}
+
+[data-theme='dark'] .menu__link--active {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+/* ── Code blocks ───────────────────────────────────────────────────────── */
+[data-theme='dark'] pre {
+  background: #0d1117 !important;
+  border: 1px solid #1f2937;
+}
+
+/* ── Admonitions ───────────────────────────────────────────────────────── */
+[data-theme='dark'] .admonition {
+  background: #111111;
+  border-color: #374151;
+}
+
+/* ── Tables ────────────────────────────────────────────────────────────── */
+[data-theme='dark'] table {
+  border-color: #1f2937;
+}
+
+[data-theme='dark'] table tr:nth-child(2n) {
+  background: #111111;
+}
+
+[data-theme='dark'] th {
+  background: #0f172a;
+  color: #10b981;
+}
+
+/* ── TOC ───────────────────────────────────────────────────────────────── */
+[data-theme='dark'] .table-of-contents__link:hover {
+  color: #10b981;
+}
+
+[data-theme='dark'] .table-of-contents__link--active {
+  color: #10b981;
+  font-weight: 600;
+}
+
+/* ── Terminal / monospace blocks on homepage ───────────────────────────── */
+.terminal-block {
+  background: #050505;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: 8px;
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.85rem;
+  color: #10b981;
+  padding: 1.25rem 1.5rem;
+  line-height: 1.6;
+}
+
+.terminal-block .prompt {
+  color: #059669;
+  user-select: none;
+}
+
+/* ── Smooth scrolling ──────────────────────────────────────────────────── */
+html {
+  scroll-behavior: smooth;
+}
+
+/* ── Footer ────────────────────────────────────────────────────────────── */
+.footer {
+  border-top: 1px solid #1f2937;
+}
+
+/* ── Mermaid diagram dark overrides ────────────────────────────────────── */
+[data-theme='dark'] .docusaurus-mermaid-container {
+  background: #0d1117;
+  border: 1px solid #1f2937;
+  border-radius: 8px;
+  padding: 1rem;
+}
