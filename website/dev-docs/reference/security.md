@@ -15,8 +15,8 @@ AITradingSystem incorporates several security controls to protect the backend AP
 
 ## Event Guards
 
-- **Forbidden Events**: The gateway strictly drops `post_trade` events if they are sent by a trigger. Triggers are only allowed to send `immediate` signals.
-- **Source IDs**: The server overwrites the `source_id` of incoming events to match the identity associated with the authenticated token. Clients cannot spoof their identity.
+- **Forbidden Events**: The gateway authorizes by event `category`. Triggers may send only `category: "signal"`; trading groups may send only `category: "decision"`.
+- **Server-Owned Source**: Clients must not send `source` or `source_id`. The server injects the authenticated identity into persisted rows and outbound event frames.
 
 ## Startup Guards
 

@@ -6,87 +6,123 @@ sidebar_position: 3
 
 # WebSocket Protocol
 
-The core backend orchestrator provides a single WebSocket gateway endpoint for all real-time communication: `/ws/events`.
+The backend exposes one real-time gateway: `/ws/events`.
 
 ## Authentication
 
-Clients authenticate by passing a token in the query string. The parameter name determines the client's role:
+Connect with exactly one token:
 
-- **Triggers**: `?trigger_token=<TOKEN>`
-- **Trading Groups**: `?trading_group_token=<TOKEN>`
+- Trigger: `ws://localhost:8000/ws/events?trigger_token=<TOKEN>`
+- Trading Group: `ws://localhost:8000/ws/events?trading_group_token=<TOKEN>`
 
-:::danger Security rules
-- Passing both tokens simultaneously results in rejection (Code 1008).
-- Passing an invalid token results in rejection (Code 1008).
-- Only **one active connection per token** is permitted. A second connection attempt with an already-active token is rejected (Code 1008).
-:::
+Passing both tokens, neither token, an invalid token, or a token that is already connected closes the socket with code `1008`.
 
-## Connection Lifecycle
+## Envelope
 
-1. **Connect**: Client connects to `wss://api.quantagenesis.space/ws/events?trading_group_token=xxx`.
-2. **Ack**: The server responds immediately with a configuration payload.
-3. **Listen Loop**: The client listens for pushed events.
-4. **Publish**: The client sends JSON messages asynchronously.
-5. **Close**: The server or client closes the connection.
+Every frame is a JSON object with `kind`:
 
-### The Initial Ack Message
+| `kind` | Purpose |
+|---|---|
+| `event` | Domain events: signals, decisions, config updates |
+| `log` | Operational logs and discussion logs |
+| `ack` | Server acknowledgements |
 
-Upon successful authentication, the server sends a configuration payload. This is crucial for trading groups, as it contains their specific configuration (symbol, leverage, members, LLM settings) without requiring a separate REST call.
+Event frames also include `category`:
+
+| `category` | Sender | Description |
+|---|---|---|
+| `signal` | Trigger | Market signal routed to trading groups |
+| `decision` | Trading Group | Trade decision routed to execution |
+| `config_update` | Backend | Live config push |
+
+`payload` is always a JSON object. Never send JSON encoded as a string.
+
+## Connected ACK
 
 ```json
 {
+  "kind": "ack",
   "ok": true,
   "message": "connected",
-  "client_id": "trading_group:<uuid>",
-  "targets": ["trade_crypto_btcusdt_15m"],
+  "client_id": "trading_group:<uuid>:<connection-uuid>",
+  "subscriptions": ["trade_crypto_btcusdt_15m"],
   "config": {
     "group_id": "uuid",
     "group_name": "trade_crypto_btcusdt_15m",
     "market": "crypto",
     "symbol": "BTCUSDT",
     "interval": "15m",
-    "members": [ ... ]
+    "members": []
   }
 }
 ```
 
-## Message Structure
-
-All messages sent over the WebSocket are JSON strings. The top-level discriminator is the `type` field.
-
-### System Messages
-
-Used for logs, discussion results, and errors.
+## Signal Event
 
 ```json
 {
-  "type": "system",
-  "level": "error",
-  "code": "AGENT_RECURSION_LIMIT",
-  "message": "Agent hit recursion limit",
-  "detail": { ... }
-}
-```
-
-### Event Messages
-
-Used for business events.
-
-```json
-{
-  "type": "event",
-  "event_type": "immediate",
+  "kind": "event",
+  "category": "signal",
   "priority": 7,
   "targets": ["trade_crypto_btcusdt_15m"],
   "title": "BTC dump after CPI",
-  "payload": "CPI higher than expected..."
+  "payload": {
+    "signal_type": "immediate",
+    "sentiment": "bearish",
+    "action_window": "now",
+    "analysis": "CPI higher than expected...",
+    "affected_symbols": ["BTCUSDT"]
+  },
+  "tags": ["btc", "cpi"],
+  "trace": {
+    "correlation_id": "signal-run-id",
+    "causation_id": "source-article-id"
+  }
 }
 ```
 
-## Server Responses to Client Sends
+## Decision Event
 
-When a client sends a message, the server processes it and sends an acknowledgment:
+```json
+{
+  "kind": "event",
+  "category": "decision",
+  "priority": 7,
+  "title": "[trade_crypto_btcusdt_15m] SHORT BTCUSDT @ 62000.0",
+  "payload": {
+    "symbol": "BTCUSDT",
+    "trade_account_id": "uuid-or-null",
+    "action": "SHORT",
+    "confidence_pct": 75,
+    "reasoning": "Momentum confirmed by team analysis.",
+    "entry": 62000.0,
+    "stop_loss": 63000.0,
+    "take_profit": 60000.0,
+    "margin_usdt": 100.0
+  },
+  "trace": {
+    "correlation_id": "signal-run-id",
+    "causation_id": "trigger-event-uuid",
+    "trigger_event_id": "trigger-event-uuid",
+    "decision_id": "decision-uuid"
+  }
+}
+```
 
-- **Event accepted**: `{"ok": true, "message": "accepted", "id": "<uuid>", "dispatched_clients": 1}`
-- **System logged**: `{"ok": true, "message": "logged"}`
-- **Validation error**: `{"ok": false, "message": "validation_error", "detail": "..."}`
+## Log Frame
+
+```json
+{
+  "kind": "log",
+  "level": "error",
+  "code": "AGENT_RECURSION_LIMIT",
+  "message": "Agent hit recursion limit",
+  "detail": {}
+}
+```
+
+## Server ACKs
+
+- Event accepted: `{"kind":"ack","ok":true,"message":"accepted","id":"<uuid>","dispatched_clients":1}`
+- Log saved: `{"kind":"ack","ok":true,"message":"logged"}`
+- Validation error: `{"kind":"ack","ok":false,"message":"validation_error","detail":[...]}`

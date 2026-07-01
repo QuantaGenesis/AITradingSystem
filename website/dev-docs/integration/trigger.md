@@ -6,61 +6,67 @@ sidebar_position: 1
 
 # Trigger Integration Guide
 
-A **trigger** is a standalone service that connects to the AITradingSystem backend, monitors an external data source, and sends event messages when something significant happens.
+A trigger monitors an external data source and sends market signals to the backend.
 
 ## Connection
 
-Connect via WebSocket using the token provided in the admin UI:
-
-```
+```text
 ws://localhost:8000/ws/events?trigger_token=<YOUR_TOKEN>
 ```
 
-Upon successful connection, the server sends a configuration ack:
+The connection ACK includes the trigger config and connected trading groups.
 
 ```json
 {
+  "kind": "ack",
   "ok": true,
   "message": "connected",
-  "client_id": "trigger_social_twitter",
-  "targets": ["trade_crypto_btcusdt_15m", "trade_crypto_ethusdt_15m"],
+  "client_id": "trigger:social_twitter:<connection-id>",
+  "subscriptions": ["__trigger_config__", "social_twitter"],
   "config": {
-    "trigger_name": "social_twitter",
+    "name": "social_twitter",
     "provider_name": "openrouter",
-    "model_name": "openai/gpt-4o-mini"
+    "model_name": "openai/gpt-4o-mini",
+    "trading_groups": []
   }
 }
 ```
 
-The `targets` array contains the names of all active trading groups. You will use this array to route your events.
-
-## Sending Events
-
-When your trigger detects a signal, send an `immediate` event:
+## Sending Signals
 
 ```json
 {
-  "type": "event",
-  "event_type": "immediate",
+  "kind": "event",
+  "category": "signal",
   "priority": 7,
   "targets": ["trade_crypto_btcusdt_15m"],
   "title": "BTC dump after CPI data",
-  "payload": "CPI higher than expected at 3.5%. BTC dropped 2.4% in 15 minutes.",
-  "tags": ["btc", "cpi", "macro"]
+  "payload": {
+    "signal_type": "immediate",
+    "sentiment": "bearish",
+    "action_window": "now",
+    "analysis": "CPI higher than expected at 3.5%. BTC dropped 2.4% in 15 minutes.",
+    "affected_symbols": ["BTCUSDT"]
+  },
+  "tags": ["btc", "cpi", "macro"],
+  "trace": {
+    "correlation_id": "source-run-id",
+    "causation_id": "source-item-id"
+  }
 }
 ```
 
+The `payload` field is a JSON object. Do not send a JSON string.
+
 :::warning
-Triggers are **not allowed** to send `post_trade` events. Attempting to do so will result in a `forbidden_event` error from the server.
+Triggers are not allowed to send `category: "decision"` events. Attempting to do so returns `forbidden_event`.
 :::
 
 ## Sending Logs
 
-Send system logs to report errors or significant state changes in your trigger:
-
 ```json
 {
-  "type": "system",
+  "kind": "log",
   "level": "info",
   "code": "TRIGGER_HEARTBEAT",
   "message": "Twitter monitor processed 1500 tweets in the last 5 minutes.",
@@ -68,4 +74,5 @@ Send system logs to report errors or significant state changes in your trigger:
 }
 ```
 
-The trigger's "Online" status in the dashboard is determined by checking if the trigger has sent any `event` or `system` message within the last 5 minutes. Sending a periodic heartbeat is recommended if your trigger is quiet.
+Do not send `source` or `source_id`; the gateway injects source identity from the trigger token.
+

@@ -17,9 +17,9 @@ The engine uses an adapter pattern to support multiple exchanges:
 
 ## The Execution Flow
 
-1. A trading group reaches a decision and sends a `post_trade` event via WebSocket.
-2. The WebSocket gateway receives the event. If `condition.domain == "trade_decision"`, it passes the payload to the Execution Engine.
-3. The Execution Engine maps the payload to an `OrderRequest`.
+1. A trading group reaches a decision and sends `kind: "event"`, `category: "decision"` via WebSocket.
+2. The WebSocket gateway validates the structured decision `payload` and passes it to the Execution Engine.
+3. The Execution Engine derives execution-only fields such as side, order type, and quantity, then maps the decision to an `OrderRequest`.
 4. It checks the linked **Trade Account** to see what mode is active:
    - **Simulated**: Skips the exchange entirely; simulates a successful fill.
    - **Sandbox / Live**: Calls the relevant Exchange Adapter to place the order.

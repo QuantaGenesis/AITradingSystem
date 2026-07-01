@@ -6,74 +6,91 @@ sidebar_position: 1
 
 # Event Types
 
-This reference lists the specific event payloads used across the platform.
+WebSocket frames use `kind` as the top-level discriminator.
 
-## Event Discriminator
+| `kind` | Description |
+|---|---|
+| `event` | Business/domain event |
+| `log` | Operational log |
+| `ack` | Server acknowledgement |
 
-All JSON payloads sent over WebSocket must include a `type` field at the root level:
-- `event`: For business events.
-- `system`: For technical logs.
+Business events use `category`.
 
-## Business Events (`type: "event"`)
+## Signal
 
-### Immediate Event
-
-Fired by triggers to announce market signals.
+Sent by triggers.
 
 ```json
 {
-  "type": "event",
-  "event_type": "immediate",
+  "kind": "event",
+  "category": "signal",
   "priority": 7,
   "targets": ["group_alpha"],
   "title": "BTC dump",
-  "payload": "Details...",
-  "tags": ["btc"]
-}
-```
-
-### Post-Trade Decision
-
-Fired by trading groups to request order placement.
-
-```json
-{
-  "type": "event",
-  "event_type": "post_trade",
-  "priority": 7,
-  "targets": ["trade_execution"],
-  "title": "Decision ready",
-  "payload": "{\"signal\": {\"action\": \"BUY\", \"qty\": 0.0}}",
-  "condition": {
-    "domain": "trade_decision",
-    "trace": {"correlation_id": "uuid"}
+  "payload": {
+    "signal_type": "immediate",
+    "analysis": "Details...",
+    "affected_symbols": ["BTCUSDT"]
+  },
+  "tags": ["btc"],
+  "trace": {
+    "correlation_id": "uuid"
   }
 }
 ```
 
-## System Events (`type: "system"`)
+## Decision
 
-### Standard Log
-
-Used to log errors or info messages.
+Sent by trading groups.
 
 ```json
 {
-  "type": "system",
-  "level": "error",
-  "code": "SOME_ERROR_CODE",
-  "message": "Human readable message",
-  "detail": {}
+  "kind": "event",
+  "category": "decision",
+  "priority": 7,
+  "title": "[group_alpha] BUY BTCUSDT @ 62000.0",
+  "payload": {
+    "symbol": "BTCUSDT",
+    "trade_account_id": null,
+    "action": "BUY",
+    "confidence_pct": 80,
+    "reasoning": "Team consensus is bullish.",
+    "entry": 62000.0,
+    "stop_loss": 61000.0,
+    "take_profit": 64000.0,
+    "margin_usdt": 100.0
+  },
+  "trace": {
+    "correlation_id": "uuid",
+    "causation_id": "trigger-event-uuid",
+    "decision_id": "decision-uuid"
+  }
 }
 ```
 
-### Discussion Log
+Do not JSON-stringify the decision payload. The gateway derives `side`, `qty`, `order_type`, and execution routing internally.
 
-Special log code parsed by the backend to store discussion results.
+## Config Update
+
+Sent by the backend.
 
 ```json
 {
-  "type": "system",
+  "kind": "event",
+  "category": "config_update",
+  "title": "group_config_changed",
+  "payload": {
+    "reason": "member_updated",
+    "config": {}
+  }
+}
+```
+
+## Log
+
+```json
+{
+  "kind": "log",
   "level": "info",
   "code": "TRADING_GROUP_DISCUSSION_LOG",
   "message": "Discussion finished",
