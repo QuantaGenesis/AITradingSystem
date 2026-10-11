@@ -11,16 +11,16 @@
 services:
   database:
     image: pgvector/pgvector:pg17-trixie
-    container_name: tradingos-db
+    container_name: aitrading-db
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
-      POSTGRES_DB: tradingos
+      POSTGRES_DB: aitrading
     volumes:
       - postgres_data_ai:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d tradingos"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d aitrading"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -30,11 +30,11 @@ services:
     build:
       context: ../AITradingSystem-backend
       dockerfile: Dockerfile
-    image: tradingos-backend:latest
-    container_name: tradingos-backend
+    image: aitrading-backend:latest
+    container_name: aitrading-backend
     restart: unless-stopped
     environment:
-      - DATABASE_URL=postgresql+psycopg://postgres:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@database:5432/tradingos
+      - DATABASE_URL=postgresql+psycopg://postgres:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@database:5432/aitrading
       - AUTH_SECRET=${AUTH_SECRET:?AUTH_SECRET is required}
       - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:?ADMIN_PASSWORD is required}
@@ -59,8 +59,8 @@ services:
         # Để trống = frontend gọi API qua nginx proxy (/api → backend:8000)
         # Set nếu dùng subdomain riêng: VITE_API_BASE_URL=https://api.example.com
         - VITE_API_BASE_URL=${VITE_API_BASE_URL:-}
-    image: tradingos-frontend:latest
-    container_name: tradingos-frontend
+    image: aitrading-frontend:latest
+    container_name: aitrading-frontend
     restart: unless-stopped
     ports:
       - "${FRONTEND_PORT:-3333}:80"

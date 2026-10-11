@@ -101,7 +101,7 @@ if [ "$COMMAND" = "setup" ]; then
             fi
         done
         
-        prompt_with_default "Enter Database URL/Path" "postgresql://postgres:password@localhost:5432/tradingos" DB_URL
+        prompt_with_default "Enter Database URL/Path" "postgresql://postgres:password@localhost:5432/aitrading" DB_URL
         
         # Write .env at root
         cat << EOF > .env
@@ -152,11 +152,11 @@ EOF
         prompt_with_default "Choice" "2" DB_MODE
         
         if [ "$DB_MODE" = "1" ]; then
-            prompt_with_default "Enter Database URL/Path" "postgresql://postgres:password@localhost:5432/tradingos" DB_URL
+            prompt_with_default "Enter Database URL/Path" "postgresql://postgres:password@localhost:5432/aitrading" DB_URL
             DB_PASS=""
         else
             prompt_with_default "Enter PostgreSQL Password for Docker" "securepassword" DB_PASS
-            DB_URL="postgresql+psycopg://postgres:${DB_PASS}@database:5432/tradingos"
+            DB_URL="postgresql+psycopg://postgres:${DB_PASS}@database:5432/aitrading"
         fi
         
         # Write .env at root
@@ -186,8 +186,8 @@ services:
     build:
       context: ./AITradingSystem-backend
       dockerfile: Dockerfile
-    image: tradingos-backend:latest
-    container_name: tradingos-backend
+    image: aitrading-backend:latest
+    container_name: aitrading-backend
     restart: unless-stopped
     environment:
       - DATABASE_URL=${DATABASE_URL}
@@ -210,8 +210,8 @@ services:
       dockerfile: Dockerfile
       args:
         - VITE_API_BASE_URL=${VITE_API_BASE_URL}
-    image: tradingos-frontend:latest
-    container_name: tradingos-frontend
+    image: aitrading-frontend:latest
+    container_name: aitrading-frontend
     restart: unless-stopped
     ports:
       - "127.0.0.1:${FRONTEND_PORT:-3333}:80"
@@ -229,16 +229,16 @@ EOF
 services:
   database:
     image: pgvector/pgvector:pg17-trixie
-    container_name: tradingos-db
+    container_name: aitrading-db
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: tradingos
+      POSTGRES_DB: aitrading
     volumes:
       - postgres_data_ai:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d tradingos"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d aitrading"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -248,8 +248,8 @@ services:
     build:
       context: ./AITradingSystem-backend
       dockerfile: Dockerfile
-    image: tradingos-backend:latest
-    container_name: tradingos-backend
+    image: aitrading-backend:latest
+    container_name: aitrading-backend
     restart: unless-stopped
     environment:
       - DATABASE_URL=${DATABASE_URL}
@@ -275,8 +275,8 @@ services:
       dockerfile: Dockerfile
       args:
         - VITE_API_BASE_URL=${VITE_API_BASE_URL}
-    image: tradingos-frontend:latest
-    container_name: tradingos-frontend
+    image: aitrading-frontend:latest
+    container_name: aitrading-frontend
     restart: unless-stopped
     ports:
       - "127.0.0.1:${FRONTEND_PORT:-3333}:80"
